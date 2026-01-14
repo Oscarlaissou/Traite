@@ -1,0 +1,37 @@
+FROM php:8.2-fpm-alpine
+
+# Installer les dépendances système
+# Ajout de 'apk update' pour s'assurer d'avoir les derniers index
+RUN apk update && apk add --no-cache \
+    git \
+    zip \
+    unzip \
+    libzip-dev \
+    oniguruma-dev \
+    libxml2-dev \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    openldap-dev \
+    && docker-php-ext-configure gd --enable-gd --with-freetype --with-jpeg \
+    && docker-php-ext-install mysqli pdo pdo_mysql zip gd bcmath xml ldap \
+    && apk del --no-cache \
+    && rm -rf /tmp/*
+
+# Installer Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Copier les fichiers de l'application
+WORKDIR /var/www/html
+COPY . .
+
+# Installer les dépendances PHP
+RUN composer install --no-dev --optimize-autoloader
+
+# Donner les droits d'écriture au dossier de stockage
+RUN chown -R www-data:www-data /var/www/html/storage \
+    && chown -R www-data:www-data /var/www/html/bootstrap/cache
+
+EXPOSE 9000
+
+CMD ["php-fpm"]

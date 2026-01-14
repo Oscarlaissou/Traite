@@ -1,0 +1,107 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: projet-traite-db
+    command: [
+      "--character-set-server=utf8mb4",
+      "--collation-server=utf8mb4_unicode_ci",
+      "--skip-character-set-client-handshake" 
+    ]
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: traite
+    ports:
+      - "${DB_EXTERNAL_PORT}:3306"
+    networks:
+      - projet-traite-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  backend:
+    build:
+      context: ./dashboard-backend
+      dockerfile: Dockerfile
+    container_name: projet-traite-backend
+    restart: always
+    extra_hosts:
+      - "ad-server:10.68.5.129"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: traite
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - projet-traite-network
+    volumes:
+      - ./dashboard-backend:/var/www/html
+      - ./dashboard-backend/storage:/var/www/html/storage
+    command: >
+      sh -c "
+        sleep 5 &&
+        if [ ! -f .env ]; then cp .env.example .env; fi &&
+        
+        # Injection automatique des variables du docker-compose vers le .env Laravel
+        sed -i \"s|^APP_URL=.*|APP_URL=http://${HOST_IP}:${BACKEND_PORT}|\" .env &&
+        sed -i \"s|^FRONTEND_URL=.*|FRONTEND_URL=http://${HOST_IP}:${FRONTEND_PORT}|\" .env &&
+        sed -i \"s|^SANCTUM_STATEFUL_DOMAINS=.*|SANCTUM_STATEFUL_DOMAINS=${HOST_IP}:${FRONTEND_PORT}|\" .env &&
+        sed -i \"s|^SESSION_DOMAIN=.*|SESSION_DOMAIN=${HOST_IP}|\" .env &&
+        
+        # Configuration des Drivers et DB
+        sed -i \"s|^SESSION_DRIVER=.*|SESSION_DRIVER=cookie|\" .env &&
+        sed -i \"s|^DB_HOST=.*|DB_HOST=db|\" .env &&
+        sed -i \"s|^DB_PASSWORD=.*|DB_PASSWORD=${DB_PASSWORD}|\" .env &&
+        
+        # Cache et Permissions
+        mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache &&
+        chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache &&
+        chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache &&
+        php artisan config:clear &&
+        php artisan storage:link --force &&
+        
+        exec php-fpm
+      "
+
+  web:
+    image: nginx:alpine
+    container_name: projet-traite-web
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "${BACKEND_PORT}:80"
+    volumes:
+      - ./dashboard-backend:/var/www/html
+      - ./dashboard-backend/storage:/var/www/html/storage
+      - ./dashboard-backend/docker/nginx-site.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - projet-traite-network
+
+  frontend:
+    build:
+      context: ./dashboard-frontend
+      dockerfile: Dockerfile
+    container_name: projet-traite-frontend
+    restart: always
+    depends_on:
+      - web
+    ports:
+      - "${FRONTEND_PORT}:80"
+    environment:
+      # Utilise l'IP et le port définis dans le .env racine
+      - REACT_APP_API_URL=http://${HOST_IP}:${BACKEND_PORT}
+    networks:
+      - projet-traite-network
+
+networks:
+  projet-traite-network:
+    driver: bridge
+
+volumes:
+  db_data:

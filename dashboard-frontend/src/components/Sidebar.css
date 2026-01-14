@@ -1,0 +1,385 @@
+.sidebar {
+  width: 300px;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #e0e0e0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: visible; /* ne pas couper le bouton toggle à droite */
+  box-sizing: border-box;
+  z-index: 10; /* assure la visibilité au-dessus du contenu */
+  transition: width 0.2s ease;
+}
+
+/* Bouton externe, en dehors de la sidebar */
+.sidebar-external-toggle {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 6px; /* léger décalage à droite du bord */
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 100; /* très au-dessus */
+}
+
+.sidebar-external-toggle:hover {
+  background: #f9fafb;
+}
+
+/* (plus utilisé pour le bouton externe) */
+
+.sidebar-header {
+  padding: 30px 20px 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* 
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  background: #e74c3c;
+  border-radius: 50%;
+  position: relative;
+} */
+
+/* Masquer l'ancienne pastille décorative qui pouvait chevaucher le menu */
+.logo-icon,
+.logo-icon::before {
+  display: none;
+  content: none;
+}
+
+.logo-text {
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+}
+
+.logo-subtitle {
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 20px 0;
+}
+
+.nav-section {
+  padding: 0 20px;
+}
+
+.dashboard-section {
+  margin-bottom: 20px;
+}
+
+.nav-item {
+  width: 100%;
+  display: flex;
+  align-items: flex-start; /* allow multi-line labels without vertical clipping */
+  gap: 12px;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  text-align: left;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.nav-item:hover {
+  background-color: #f8f9fa;
+}
+
+.nav-item.active {
+  background-color: #D63F45;
+  color: white;
+}
+
+.dashboard-item.active {
+  background-color: #D63F45;
+  color: white;
+}
+
+.nav-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+  /* padding-right: 15px; */
+  margin-top: 2px; /* align icon with multi-line text */
+}
+
+.nav-text {
+  flex: 1;
+  font-weight: 500;
+  white-space: normal; /* allow wrap */
+  overflow-wrap: normal; /* don't break inside words */
+  word-break: keep-all; /* wrap only at spaces */
+  line-height: 1.35; /* better readability on 2 lines */
+}
+
+/* Permettre le retour à la ligne du texte si nécessaire */
+.nav-item .nav-text { white-space: normal; }
+
+.dropdown-icon {
+  color: #666;
+  transition: transform 0.2s;
+}
+
+.nav-item.active .dropdown-icon {
+  color: white;
+}
+
+.subitems-group {
+  margin-top: 20px;
+  
+  /* padding-left: 20px; */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  
+}
+
+.nav-subitem {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 8px 24px; /* give more room for text */
+  border: none;
+  background: #f8f9fa;
+  text-align: left;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #333;
+  transition: all 0.2s;
+}
+
+.nav-subitem .nav-text {
+  white-space: normal;
+  overflow-wrap: normal; /* don't break inside words */
+  word-break: keep-all; /* wrap only at spaces */
+  line-height: 1.35;
+}
+
+.nav-subitem:hover {
+  background-color: #eef1f4;
+}
+
+.nav-subitem.active {
+  background-color: #E8F0FE;
+  border: 1px solid #c7d2fe;
+}
+
+.nav-subitem.active .nav-icon,
+.nav-subitem.active .nav-text {
+  color: #3D3D5D;
+}
+
+/* Responsive: conserver la sidebar à gauche, réduire légèrement la largeur et les espacements */
+.sidebar {
+  width: 300px;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #e0e0e0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* État réduit */
+.sidebar.collapsed {
+  width: 120px;
+}
+
+.sidebar.collapsed .sidebar-header {
+  padding: 20px 12px 12px;
+}
+
+.sidebar.collapsed .logo img {
+  width: 36px !important;
+}
+
+.sidebar.collapsed .logo-text { display: none; }
+.sidebar.collapsed .nav-text { display: none; }
+.sidebar.collapsed .subitems-group { display: none; }
+
+/* Assure l'affichage des sous-menus lorsque la sidebar est élargie */
+.sidebar:not(.collapsed) .subitems-group { display: flex; }
+
+.sidebar.collapsed .nav-item,
+.sidebar.collapsed .logout-button {
+  justify-content: center;
+  padding: 10px 8px;
+}
+
+.sidebar.collapsed .nav-icon,
+.sidebar.collapsed .logout-icon {
+  margin-top: 0;
+}
+
+/* Add styles for the pending clients count badge */
+.pending-count-badge {
+  background-color: #ef4444; /* red-500 */
+  color: white;
+  border-radius: 9999px;
+  padding: 2px 6px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-left: 8px;
+  min-width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure the badge is visible even when sidebar is collapsed */
+.sidebar.collapsed .pending-count-badge {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Adjust nav item padding to accommodate badge */
+.nav-subitem .nav-text {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+/* Compact sidebar on 1366px-wide screens */
+@media (max-width: 1400px) {
+  .sidebar {
+    width: 260px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .sidebar {
+    width: 280px;
+  }
+}
+
+@media (max-width: 992px) {
+  .sidebar {
+    width: 260px; /* keep sidebar on the left on small screens */
+  }
+  .sidebar-header {
+    padding: 24px 16px 16px;
+  }
+  .nav-section {
+    padding: 0 16px;
+  }
+  .nav-item {
+    padding: 10px 14px;
+    gap: 10px;
+    font-size: 13px;
+  }
+  .nav-icon {
+    width: 18px;
+  }
+  .subitems-group {
+    gap: 8px;
+  }
+  .nav-subitem {
+    gap: 16px;
+    padding: 8px 32px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 220px; /* keep sidebar on the left on small screens */
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    border-right: 1px solid #e0e0e0;
+    border-bottom: none;
+  }
+  .logo img {
+    width: 160px;
+  }
+  .nav-item {
+    padding: 10px 12px;
+  }
+  .nav-subitem {
+    padding: 8px 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .sidebar {
+    width: 220px;
+  }
+  .nav-item {
+    gap: 8px;
+  }
+  .nav-subitem {
+    gap: 12px;
+  }
+}
+
+.sidebar-footer {
+  padding: 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.logout-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  text-align: left;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  color: #666;
+}
+
+.logout-button:hover {
+  background-color: #f8f9fa;
+  color: #D63F45;
+}
+
+.logout-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+.logout-text {
+  font-weight: 500;
+}

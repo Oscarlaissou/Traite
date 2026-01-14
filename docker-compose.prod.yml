@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: projet-traite-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: traite
+      MYSQL_USER: root
+      MYSQL_PASSWORD:
+      MYSQL_ROOT_PASSWORD: 
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - projet-traite-network
+
+  backend:
+    image: your-dockerhub-username/projet-traite-backend:latest
+    container_name: projet-traite-backend
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: traite
+      DB_USERNAME: root
+      DB_PASSWORD: 
+      APP_KEY: ${APP_KEY=base64:REwknq/OCULg8owvGnCITDJlJdr/JPFrgvWigTIGZsw=}
+    ports:
+      - "8000:80"
+    networks:
+      - projet-traite-network
+
+  frontend:
+    image: your-dockerhub-username/projet-traite-frontend:latest
+    container_name: projet-traite-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+    networks:
+      - projet-traite-network
+
+networks:
+  projet-traite-network:
+    driver: bridge
+
+volumes:
+  db_data:
