@@ -41,9 +41,14 @@ services:
       - projet-traite-network
     volumes:
       - ./dashboard-backend:/var/www/html
+      - /var/www/html/vendor
       - ./dashboard-backend/storage:/var/www/html/storage
     command: >
       sh -c "
+        # 1. Vérifier si vendor existe, sinon installer
+        if [ ! -d \"vendor\" ]; then
+            composer install --no-dev --optimize-autoloader
+        fi
         sleep 5 &&
         if [ ! -f .env ]; then cp .env.example .env; fi &&
         
