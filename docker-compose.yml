@@ -26,40 +26,48 @@ services:
       dockerfile: Dockerfile
     container_name: projet-traite-backend
     restart: always
-    extra_hosts:
-      - "ad-server:10.68.5.129"
     depends_on:
       db:
         condition: service_healthy
     environment:
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_DATABASE: traite
-      DB_USERNAME: root
-      DB_PASSWORD: ${DB_PASSWORD}
+      - HOST_IP=${HOST_IP}
+      - BACKEND_PORT=${BACKEND_PORT}
+      - FRONTEND_PORT=${FRONTEND_PORT}
+      - DB_PASSWORD=${DB_PASSWORD}
     networks:
       - projet-traite-network
     volumes:
       - ./dashboard-backend:/var/www/html
+      - /var/www/html/vendor
       - ./dashboard-backend/storage:/var/www/html/storage
     command: >
       sh -c "
         sleep 5 &&
         if [ ! -f .env ]; then cp .env.example .env; fi &&
         
-        # On s'assure que les dossiers existent pour éviter les erreurs
-        mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache &&
+        # Fonction pour mettre à jour ou ajouter une variable proprement
+        set_env() {
+            grep -q \"^$1=\" .env && sed -i \"s|^$1=.*|$1=$2|\" .env || echo \"$1=$2\" >> .env
+        }
+
+        # Application automatique de la configuration
+        set_env APP_URL \"http://${HOST_IP}:${BACKEND_PORT}\"
+        set_env FRONTEND_URL \"http://${HOST_IP}:${FRONTEND_PORT}\"
+        set_env SANCTUM_STATEFUL_DOMAINS \"${HOST_IP}:${FRONTEND_PORT}\"
+        set_env SESSION_DOMAIN \"${HOST_IP}\"
+        set_env DB_HOST \"db\"
+        set_env DB_PASSWORD \"${DB_PASSWORD}\"
+        set_env SESSION_DRIVER \"cookie\"
+        set_env CACHE_STORE \"database\"
+
+        # Permissions et dossiers
+        mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache
+        chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+        chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
         
-        # Configuration
-        sed -i \"s|APP_URL=.*|APP_URL=http://${HOST_IP}:${BACKEND_PORT}|\" .env &&
-        sed -i \"s|DB_PASSWORD=.*|DB_PASSWORD=${DB_PASSWORD}|\" .env &&
-        
-        # Permissions
-        chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache &&
-        chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache &&
-        
-        # Artisan (ne plantera plus car vendor est là)
-        php artisan config:clear &&
+        # Nettoyage automatique
+        php artisan config:clear
+        php artisan key:generate --force
         
         exec php-fpm
       "
