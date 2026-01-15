@@ -45,33 +45,33 @@ services:
       - ./dashboard-backend/storage:/var/www/html/storage
     command: >
       sh -c "
-        # 1. Vérifier si vendor existe, sinon installer
-        if [ ! -d \"vendor\" ]; then
-            composer install --no-dev --optimize-autoloader
-        fi
-        sleep 5 &&
-        if [ ! -f .env ]; then cp .env.example .env; fi &&
+        # 1. Attendre la DB
+        sleep 5;
+
+        # 2. INSTALLATION DES DÉPENDANCES (DOIT ÊTRE FAIT EN PREMIER)
+        if [ ! -f vendor/autoload.php ]; then
+            echo 'Dossier vendor absent. Installation en cours...';
+            composer install --no-dev --no-interaction --optimize-autoloader || exit 1;
+        fi;
+
+        # 3. CONFIGURATION DES FICHIERS
+        if [ ! -f .env ]; then cp .env.example .env; fi;
         
-        # On force l'écriture des variables même si elles n'existent pas dans le .env
-        grep -qq '^APP_URL=' .env && sed -i \"s|^APP_URL=.*|APP_URL=http://${HOST_IP}:${BACKEND_PORT}|\" .env || echo \"APP_URL=http://${HOST_IP}:${BACKEND_PORT}\" >> .env &&
-        grep -qq '^FRONTEND_URL=' .env && sed -i \"s|^FRONTEND_URL=.*|FRONTEND_URL=http://${HOST_IP}:${FRONTEND_PORT}|\" .env || echo \"FRONTEND_URL=http://${HOST_IP}:${FRONTEND_PORT}\" >> .env &&
-        grep -qq '^SANCTUM_STATEFUL_DOMAINS=' .env && sed -i \"s|^SANCTUM_STATEFUL_DOMAINS=.*|SANCTUM_STATEFUL_DOMAINS=${HOST_IP}:${FRONTEND_PORT}|\" .env || echo \"SANCTUM_STATEFUL_DOMAINS=${HOST_IP}:${FRONTEND_PORT}\" >> .env &&
-        grep -qq '^SESSION_DOMAIN=' .env && sed -i \"s|^SESSION_DOMAIN=.*|SESSION_DOMAIN=${HOST_IP}|\" .env || echo \"SESSION_DOMAIN=${HOST_IP}\" >> .env &&
-        
-        # Drivers
-        sed -i \"s|^SESSION_DRIVER=.*|SESSION_DRIVER=cookie|\" .env &&
-        sed -i \"s|^CACHE_STORE=.*|CACHE_STORE=database|\" .env &&
-        sed -i \"s|^DB_PASSWORD=.*|DB_PASSWORD=${DB_PASSWORD}|\" .env &&
-        
-        # Permissions et Nettoyage
-        mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache &&
-        chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache &&
-        chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache &&
-        
-        php artisan config:clear &&
-        php artisan cache:clear &&
-        
-        # Démarrage
+        # Utilisation de '|' comme délimiteur pour éviter les conflits
+        sed -i \"s|APP_URL=.*|APP_URL=http://${HOST_IP}:${BACKEND_PORT}|\" .env;
+        sed -i \"s|FRONTEND_URL=.*|FRONTEND_URL=http://${HOST_IP}:${FRONTEND_PORT}|\" .env;
+        sed -i \"s|DB_PASSWORD=.*|DB_PASSWORD=${DB_PASSWORD}|\" .env;
+        sed -i \"s|SESSION_DRIVER=.*|SESSION_DRIVER=cookie|\" .env;
+
+        # 4. PERMISSIONS
+        mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache;
+        chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache;
+        chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache;
+
+        # 5. NETTOYAGE CACHE (SEULEMENT SI VENDOR EST LÀ)
+        php artisan config:clear;
+
+        echo 'Backend prêt ! Lancement de PHP-FPM...';
         exec php-fpm
       "
   web:
