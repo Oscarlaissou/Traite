@@ -29,7 +29,7 @@ jobs:
         context: ./dashboard-backend
         file: ./dashboard-backend/Dockerfile
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/projet-traite-backend:latest
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/Traite-backend:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
@@ -39,7 +39,7 @@ jobs:
         context: ./dashboard-frontend
         file: ./dashboard-frontend/Dockerfile
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/projet-traite-frontend:latest
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/Traite-frontend:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
