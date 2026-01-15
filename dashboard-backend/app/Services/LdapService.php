@@ -59,8 +59,8 @@ class LdapService
         $domain = config('ldap.domain');
         
         // AJUSTEMENT : Format UPN
-        $userDn = $username . '@' . $domain;
-        
+// Remplace l'ancienne ligne par celle-ci (plus intelligente) :
+$userDn = str_contains($username, '@') ? $username : $username . '@' . config('ldap.domain');        
         $connection = @ldap_connect($ldapHost, $ldapPort);
         if (!$connection) return null;
         
