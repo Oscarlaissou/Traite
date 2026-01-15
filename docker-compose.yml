@@ -47,27 +47,28 @@ services:
         sleep 5 &&
         if [ ! -f .env ]; then cp .env.example .env; fi &&
         
-        # Injection automatique des variables du docker-compose vers le .env Laravel
-        sed -i \"s|^APP_URL=.*|APP_URL=http://${HOST_IP}:${BACKEND_PORT}|\" .env &&
-        sed -i \"s|^FRONTEND_URL=.*|FRONTEND_URL=http://${HOST_IP}:${FRONTEND_PORT}|\" .env &&
-        sed -i \"s|^SANCTUM_STATEFUL_DOMAINS=.*|SANCTUM_STATEFUL_DOMAINS=${HOST_IP}:${FRONTEND_PORT}|\" .env &&
-        sed -i \"s|^SESSION_DOMAIN=.*|SESSION_DOMAIN=${HOST_IP}|\" .env &&
+        # On force l'écriture des variables même si elles n'existent pas dans le .env
+        grep -qq '^APP_URL=' .env && sed -i \"s|^APP_URL=.*|APP_URL=http://${HOST_IP}:${BACKEND_PORT}|\" .env || echo \"APP_URL=http://${HOST_IP}:${BACKEND_PORT}\" >> .env &&
+        grep -qq '^FRONTEND_URL=' .env && sed -i \"s|^FRONTEND_URL=.*|FRONTEND_URL=http://${HOST_IP}:${FRONTEND_PORT}|\" .env || echo \"FRONTEND_URL=http://${HOST_IP}:${FRONTEND_PORT}\" >> .env &&
+        grep -qq '^SANCTUM_STATEFUL_DOMAINS=' .env && sed -i \"s|^SANCTUM_STATEFUL_DOMAINS=.*|SANCTUM_STATEFUL_DOMAINS=${HOST_IP}:${FRONTEND_PORT}|\" .env || echo \"SANCTUM_STATEFUL_DOMAINS=${HOST_IP}:${FRONTEND_PORT}\" >> .env &&
+        grep -qq '^SESSION_DOMAIN=' .env && sed -i \"s|^SESSION_DOMAIN=.*|SESSION_DOMAIN=${HOST_IP}|\" .env || echo \"SESSION_DOMAIN=${HOST_IP}\" >> .env &&
         
-        # Configuration des Drivers et DB
+        # Drivers
         sed -i \"s|^SESSION_DRIVER=.*|SESSION_DRIVER=cookie|\" .env &&
-        sed -i \"s|^DB_HOST=.*|DB_HOST=db|\" .env &&
+        sed -i \"s|^CACHE_STORE=.*|CACHE_STORE=database|\" .env &&
         sed -i \"s|^DB_PASSWORD=.*|DB_PASSWORD=${DB_PASSWORD}|\" .env &&
         
-        # Cache et Permissions
+        # Permissions et Nettoyage
         mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache &&
         chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache &&
         chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache &&
-        php artisan config:clear &&
-        php artisan storage:link --force &&
         
+        php artisan config:clear &&
+        php artisan cache:clear &&
+        
+        # Démarrage
         exec php-fpm
       "
-
   web:
     image: nginx:alpine
     container_name: projet-traite-web
