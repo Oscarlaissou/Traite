@@ -44,12 +44,12 @@ services:
       sh -c "
         sleep 5 &&
         if [ ! -f .env ]; then cp .env.example .env; fi &&
-        
+    
         # Fonction pour mettre à jour ou ajouter une variable proprement
         set_env() {
             grep -q \"^$1=\" .env && sed -i \"s|^$1=.*|$1=$2|\" .env || echo \"$1=$2\" >> .env
         }
-
+        
         # Application automatique de la configuration
         set_env APP_URL \"http://${HOST_IP}:${BACKEND_PORT}\"
         set_env FRONTEND_URL \"http://${HOST_IP}:${FRONTEND_PORT}\"
